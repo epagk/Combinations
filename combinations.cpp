@@ -276,50 +276,40 @@ double coal_value(vector<int> v)
 	if (v.empty())
 		return value;
 
-	vector<vector<int>> combs = units_pairs(v, v.size(), 2);
-	vector<int> indexes{find_indexes(combs)};	// size of indexes is 6. First 3 are indexes of units. Last 3 are indexes of pairs
-
-	int l = ( v.size() == 1 ) ? 0 : elementsNum;
-	int h = ( v.size() == 1 ) ? elementsNum : memo.size();
-
-	if ( v.size() == 1 || v.size() == 2 )
+	if ( v.size() == 1 )
 	{
-		for (unsigned i = l; i < h; ++i)
+		for (unsigned i = 0; i < elementsNum; ++i)
 		{
 			if ( memo.at(i).first == v )
 				return memo.at(i).second;
 		}
 	}
+	else if ( v.size() == 2 )
+	{
+		vector<int> p{v.at(1)};
+		p.push_back(v.at(0));
 
-	try {
-		if (v.size() == 4)
+		for (unsigned i = elementsNum; i < memo.size(); ++i)
 		{
-			vector<vector<int>> combs = units_pairs(v, v.size(), 2);
-			vector<int> indexes{find_indexes(combs)};	// size of indexes is 10. First 4 are indexes of units. Last 6 are indexes of pairs
-			value = memo.at(indexes.at(4)).second + memo.at(indexes.at(5)).second + memo.at(indexes.at(6)).second
-					+ memo.at(indexes.at(7)).second + memo.at(indexes.at(8)).second + memo.at(indexes.at(9)).second
-					- 2*( memo.at(indexes.at(0)).second + memo.at(indexes.at(1)).second + memo.at(indexes.at(2)).second + memo.at(indexes.at(3)).second );
+			if ( memo.at(i).first == v || memo.at(i).first == p )
+				return memo.at(i).second;
 		}
 	}
-	catch (const std::out_of_range& oor) {
-	    std::cerr << "Here is the problem!!: " << oor.what() << '\n';
-	}
-
-	if ( v.size() == 3 )
+	else if ( v.size() == 3 )
 	{
 		vector<vector<int>> combs = units_pairs(v, v.size(), 2);
 		vector<int> indexes{find_indexes(combs)};	// size of indexes is 6. First 3 are indexes of units. Last 3 are indexes of pairs
 		value = memo.at(indexes.at(3)).second + memo.at(indexes.at(4)).second + memo.at(indexes.at(5)).second
 				- ( memo.at(indexes.at(0)).second + memo.at(indexes.at(1)).second + memo.at(indexes.at(2)).second );
 	}
-	// else
-	// {
-	// 	vector<vector<int>> combs = units_pairs(v, v.size(), 2);
-	// 	vector<int> indexes{find_indexes(combs)};	// size of indexes is 10. First 4 are indexes of units. Last 6 are indexes of pairs
-	// 	value = memo.at(indexes.at(4)).second + memo.at(indexes.at(5)).second + memo.at(indexes.at(6)).second
-	// 			+ memo.at(indexes.at(7)).second + memo.at(indexes.at(8)).second + memo.at(indexes.at(9)).second
-	// 			- 2*( memo.at(indexes.at(0)).second + memo.at(indexes.at(1)).second + memo.at(indexes.at(2)).second + memo.at(indexes.at(3)).second );
-	// }
+	else if (v.size() == 4 )
+	{
+		vector<vector<int>> combs = units_pairs(v, v.size(), 2);
+		vector<int> indexes{find_indexes(combs)};	// size of indexes is 10. First 4 are indexes of units. Last 6 are indexes of pairs
+		value = memo.at(indexes.at(4)).second + memo.at(indexes.at(5)).second + memo.at(indexes.at(6)).second
+				+ memo.at(indexes.at(7)).second + memo.at(indexes.at(8)).second + memo.at(indexes.at(9)).second
+				- 2*( memo.at(indexes.at(0)).second + memo.at(indexes.at(1)).second + memo.at(indexes.at(2)).second + memo.at(indexes.at(3)).second );
+	}
 
 	return value;
 }
@@ -664,14 +654,14 @@ void branchNbound(vector<int> &elements)
 	for (int i = 0; i < sorted.size(); ++i)
 		printf("%d ", sorted.at(i));
 
-	// printf("\n\n========================\n");
-	// for (int i = 0; i < memo.size(); ++i)
-	// {
-	// 	for (int j = 0; j < memo.at(i).first.size(); ++j)
-	// 		printf("%d ", memo.at(i).first.at(j));
-	// 	printf("\t | value: %.2lf \n", memo.at(i).second);
-	// }
-	// printf("========================\n\n");
+	printf("\n\n========================\n");
+	for (int i = 0; i < memo.size(); ++i)
+	{
+		for (int j = 0; j < memo.at(i).first.size(); ++j)
+			printf("%d ", memo.at(i).first.at(j));
+		printf("\t | value: %.2lf \n", memo.at(i).second);
+	}
+	printf("========================\n\n");
 
 	vector<pair<int, int>> line{make_pair(-1, sorted.at(0))};
 	for (int i = 0; i < sorted.size(); ++i)
