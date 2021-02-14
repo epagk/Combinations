@@ -9,7 +9,7 @@ using namespace std;
 
 vector<pair<vector<int>, double>> memo;
 vector<pair<vector<int>, double>> rest;
-int elementsNum = 20;
+int elementsNum = 70;
 
 pair<vector<int>, double> max_two({}, -FLT_MAX);
 pair<vector<int>, double> max_three({}, -FLT_MAX);
@@ -76,7 +76,6 @@ vector<int> search_indexes(vector<vector<int>> &v)
 
 	return indexes;
 }
-
 
 double calc_value(vector<int> &v)
 {
@@ -197,10 +196,10 @@ void exaustive_search(vector<int> &elements)
 	// 	printf("   | value: %.2lf \n", rest.at(i).second);
 	// }
 
-	printf("\nMax utility pair: \n");
-	for (int i = 0; i < max_two.first.size(); ++i)
-		printf("%d ", max_two.first.at(i));
-	printf(" , value = %.2lf", max_two.second);
+	// printf("\nMax utility pair: \n");
+	// for (int i = 0; i < max_two.first.size(); ++i)
+	// 	printf("%d ", max_two.first.at(i));
+	// printf(" , value = %.2lf", max_two.second);
 
 	// printf("\nMax utility threesome: \n");
 	// for (int i = 0; i < max_three.first.size(); ++i)
@@ -323,7 +322,6 @@ pair<vector<int>, int> upperEstimation(vector<int> in, vector<int> out, vector<i
 {
 	pair<vector<int>, int> estimation({}, 0);
 
-	vector<int> p;
 	int max;
 
 	if (in.empty())
@@ -341,9 +339,10 @@ pair<vector<int>, int> upperEstimation(vector<int> in, vector<int> out, vector<i
 	if ( in.size() == 1 )
 	{
 		int el = in.at(0);
+		int sec, maxSec = 0;
 		vector<int> v;
-		int sec;
 
+		vector<int> maxPairs;
 		max = 0;
 
 		for (unsigned i = elementsNum; i < memo.size(); ++i)	// Check only Pairs - Skip Units
@@ -364,8 +363,6 @@ pair<vector<int>, int> upperEstimation(vector<int> in, vector<int> out, vector<i
 			}
 		}
 
-		max = 0;
-
 		for (unsigned i = elementsNum; i < memo.size(); ++i)	// Check only Pairs - Skip Units
 		{
 			int elem1 = memo.at(i).first.at(0);
@@ -377,21 +374,34 @@ pair<vector<int>, int> upperEstimation(vector<int> in, vector<int> out, vector<i
 			if ( count(out.begin(), out.end(), elem1) || count(out.begin(), out.end(), elem2) )
 				continue;
 
-			p = memo.at(i).first;
-			p.insert(p.end(), v.begin(), v.end());
-			int val = coal_value(p);
-
-			if ( val > max )
+			if ( memo.at(i).second > max )
 			{
-				max = val;
-				estimation.first = p;
+				max = memo.at(i).second;
+				maxPairs.clear();
+				maxPairs.push_back(i);
 			}
+			else if ( memo.at(i).second == max )
+				maxPairs.push_back(i);
 		}
 
-		estimation.second = max;
+		for (unsigned i = 0; i < maxPairs.size(); ++i)
+		{
+			vector<int> p = memo.at(maxPairs.at(i)).first;
+			p.insert(p.end(), v.begin(), v.end());
+
+			int val = coal_value(v);
+
+			if ( val > estimation.second )
+			{
+				estimation.first = v;
+				estimation.second = val;
+			}
+		}
+		
 	}
 	else if ( in.size() == 2 )
 	{
+		vector<int> maxPairs;
 		max = 0;
 
 		for (unsigned i = elementsNum; i < memo.size(); ++i)	// Check only Pairs - Skip Units
@@ -405,18 +415,29 @@ pair<vector<int>, int> upperEstimation(vector<int> in, vector<int> out, vector<i
 			if ( count(out.begin(), out.end(), elem1) || count(out.begin(), out.end(), elem2) )
 				continue;
 
-			p = memo.at(i).first;
-			p.insert(p.end(), in.begin(), in.end());
-			int val = coal_value(p);
-
-			if ( val > max )
+			if ( memo.at(i).second > max )
 			{
-				max = val;
-				estimation.first = p;
+				max = memo.at(i).second;
+				maxPairs.clear();
+				maxPairs.push_back(i);
 			}
+			else if ( memo.at(i).second == max )
+				maxPairs.push_back(i);
 		}
 
-		estimation.second = max;
+		for (unsigned i = 0; i < maxPairs.size(); ++i)
+		{
+			vector<int> p = memo.at(maxPairs.at(i)).first;
+			p.insert(p.end(), in.begin(), in.end());
+
+			int val = coal_value(p);
+			
+			if ( val > estimation.second )
+			{
+				estimation.first = p;
+				estimation.second = val;
+			}
+		}
 	}
 	else if ( in.size() == 3 ) 
 	{
@@ -429,18 +450,16 @@ pair<vector<int>, int> upperEstimation(vector<int> in, vector<int> out, vector<i
 			if ( count(in.begin(), in.end(), elem) || count(out.begin(), out.end(), elem) )
 				continue;
 
-			p = in;
+			vector<int> p = in;
 			p.push_back(elem);
 			int val = coal_value(p);
 
 			if ( val > max )
 			{
-				max = val;
 				estimation.first = p;
+				estimation.second = val;
 			}
 		}
-
-		estimation.second = max;
 	}
 
 	return estimation;
@@ -485,31 +504,38 @@ void nodes_parameters(treeNode* n, vector<int> &s)
 		return;
 	}
 
-	(*n).value = coal_value((*n).members);
-	
 	treeNode* parent = (*n).parent;
 
-	if (parent == 0)
+	if (parent == 0)	// Root node
 	{
+		(*n).value = coal_value((*n).members);
 		(*n).U = upperEstimation((*n).members, (*n).excluders, s);
 		return;
 	}
 
-	if( (*n).members.size() == 4 )
+	if ( (*n).members == (*parent).members )	// Right node has exactly same elements as it's parent. So, no need to recalculate value
+		(*n).value = (*parent).value;
+	else
+		(*n).value = coal_value((*n).members);	// Left node has one extra element. New set to be calculated
+
+
+	if( (*n).members.size() == 4 )	// When coalition is full. Upper equals value
 	{
 		(*n).U.first = (*n).members;
 		(*n).U.second = (*n).value;
 		return;
 	}
 
-	bool skip = true;
+	bool skip = true;	// In some cases their is no need to estimate the Upper bound. It's inherited from parent node
 
+	// If new member doesn't belong to parent's estimation already, we need to calculate a new estimation 
 	for (unsigned i = 0; i < (*n).members.size(); ++i)
 	{
 		if ( !count( (*parent).U.first.begin(), (*parent).U.first.end(), (*n).members.at(i) ) )
 			skip = false;
 	}
 
+	// If new element has to be excluded but it belongs to parent's estimation, we need to calculate a new estimation
 	for (unsigned i = 0; i < (*n).excluders.size(); ++i)
 	{
 		if ( count( (*parent).U.first.begin(), (*parent).U.first.end(), (*n).excluders.at(i) ) )
@@ -576,9 +602,6 @@ vector<int> order_by_shapley(vector<int> &elements)
 		shapley_copy[i] += 0.5*edges;
 	}
 
-	// for (int i = 0; i < elements.size(); ++i)
-	// 	printf("\nElement %d has shapley: %f", elements.at(i), shapley[i]);
-
 	vector<int> sorted;
 
 	for (unsigned i = 0; i < elements.size(); ++i)
@@ -595,7 +618,6 @@ vector<int> order_by_shapley(vector<int> &elements)
 			}
 		}
 
-		// sorted.push_back(elements.at(idx));
 		sorted.push_back(idx);
 		shapley_copy[idx] = -1;
 	}
@@ -643,10 +665,11 @@ void recalculatePairs()
 	}
 }
 
-
-
 void branchNbound(vector<int> &elements)
 {
+	coalCombinations(elements, elements.size(), 1);
+	coalCombinations(elements, elements.size(), 2);
+
 	vector<int> sorted = order_by_shapley(elements);	// Elements sorted by ther shapley value
 	recalculatePairs();
 
@@ -689,14 +712,11 @@ void branchNbound(vector<int> &elements)
     	treeNode* N = extend.front();
     	extend.pop();
 
-    	printf("\nextend size: %ld\n", extend.size());
-
     	nodes_parameters(N, sorted);
     	print_node(N);
 
     	if ( !(*N).blocked && (*N).U.second >= maxVal )
     	{
-    		printf("\nIn if.. (*N).U.second: %d , maxVal: %d\n", (*N).U.second, maxVal);
     		if ( (*N).value > maxVal )
     		{
     			bestCoal = (*N).members;
@@ -740,6 +760,6 @@ int main()
 
 	random_shuffle ( elements.begin(), elements.end() );
 
-	exaustive_search(elements);
+	// exaustive_search(elements);
 	branchNbound(elements);
 }
